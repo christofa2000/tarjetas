@@ -1,13 +1,14 @@
-'use client';
+﻿'use client';
 
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useSearchParams } from 'next/navigation';
+import useAuthStore from '@/lib/authStore';
 
 const schema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(4, 'Mínimo 4 caracteres'),
+  email: z.string().email('Email inv\u00E1lido'),
+  password: z.string().min(4, 'M\u00EDnimo 4 caracteres'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -16,6 +17,8 @@ export default function LoginPage() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get('next') || '/dashboard';
+
+  const login = useAuthStore((state) => state.login);
 
   const {
     register,
@@ -26,20 +29,10 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      // Mock API login (ya lo armamos en app/api/auth/login/route.ts)
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-
-      if (!res.ok) {
-        setError('root', { message: 'Credenciales inválidas' });
-        return;
-      }
-
+      await login(data.email, data.password);
       router.replace(next);
-    } catch {
-      setError('root', { message: 'Error de red. Intentá de nuevo.' });
+    } catch (error) {
+      setError('root', { message: 'No se pudo iniciar sesi\u00F3n. Intenta de nuevo.' });
     }
   };
 
@@ -63,7 +56,7 @@ export default function LoginPage() {
           <input
             type="password"
             className="w-full border rounded p-2"
-            placeholder="Contraseña"
+            placeholder="Contrase\u00F1a"
             {...register('password')}
           />
           {errors.password && (
@@ -79,13 +72,16 @@ export default function LoginPage() {
           disabled={isSubmitting}
           className="w-full rounded bg-slate-900 text-white py-2"
         >
-          {isSubmitting ? 'Ingresando…' : 'Ingresar'}
+          {isSubmitting ? 'Ingresando...' : 'Ingresar'}
         </button>
       </form>
 
       <p className="text-xs text-slate-500 mt-4">
-        * Demo: cualquier email/contraseña funciona (mock).
+        * Demo: cualquier email/contrase\u00F1a funciona (mock).
       </p>
     </div>
   );
 }
+
+
+

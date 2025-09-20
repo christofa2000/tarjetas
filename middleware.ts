@@ -1,22 +1,19 @@
-// middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Protegemos /dashboard, /cards y /transactions.
-// Si no hay cookie "access_token", redirigimos a /login?next=<ruta original>
+const PROTECTED_PREFIXES = ['/dashboard', '/cards', '/transactions'];
+
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get('access_token')?.value;
+  const token = req.cookies.get('access_token')?.value ?? '';
+  const pathname = req.nextUrl.pathname;
 
-  const isProtected =
-    req.nextUrl.pathname.startsWith('/dashboard') ||
-    req.nextUrl.pathname.startsWith('/cards') ||
-    req.nextUrl.pathname.startsWith('/transactions');
+  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   if (isProtected && !token) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/login';
-    url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
-    return NextResponse.redirect(url);
+    const nextValue = pathname + req.nextUrl.search;
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/login';
+    redirectUrl.searchParams.set('next', nextValue);
+    return NextResponse.redirect(redirectUrl);
   }
 
   return NextResponse.next();
