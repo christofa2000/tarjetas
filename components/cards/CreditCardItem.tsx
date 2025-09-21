@@ -182,7 +182,7 @@ const CreditCardItem = ({
 
   return (
     <>
-      <div className='flex w-full max-w-sm flex-col rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-2xl'>
+      <div className="card-fire max-w-sm">
         <div className='flex items-start justify-between'>
           <div>
             {brand ? (
@@ -219,7 +219,7 @@ const CreditCardItem = ({
         <button
           type='button'
           onClick={() => setIsModalOpen(true)}
-          className='mt-8 inline-flex items-center justify-center rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900'
+          className="btn-primary text-xs"
         >
           Mostrar datos
         </button>

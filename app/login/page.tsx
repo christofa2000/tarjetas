@@ -43,7 +43,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <div>
           <input
-            className="w-full border rounded p-2"
+            className="w-full rounded border border-white/10 bg-white/90 text-slate-900 placeholder:text-slate-500 p-2"
             placeholder="Email"
             {...register('email')}
           />
@@ -55,7 +55,7 @@ export default function LoginPage() {
         <div>
           <input
             type="password"
-            className="w-full border rounded p-2"
+            className="w-full rounded border border-white/10 bg-white/90 text-slate-900 placeholder:text-slate-500 p-2"
             placeholder="Contrase\u00F1a"
             {...register('password')}
           />

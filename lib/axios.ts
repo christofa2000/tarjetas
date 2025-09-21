@@ -10,7 +10,7 @@ import {
 
 type PendingRequest = {
   resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
 };
 
 const api = axios.create({
