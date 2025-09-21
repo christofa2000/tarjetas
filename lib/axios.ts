@@ -1,27 +1,31 @@
-﻿import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosHeaders, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import {
   getAccessToken,
   getRefreshToken,
-  getExpiresAt,
   setTokens,
   isAccessTokenNearExpiry,
   clearTokens,
 } from './token';
 
 type PendingRequest = {
-  resolve: (value?: unknown) => void;
+  resolve: () => void;
   reject: (reason?: unknown) => void;
+};
+
+const RETRY_FLAG = '__axios_retry__' as const;
+const REFRESH_ENDPOINT = '/api/auth/refresh';
+
+type RetriableConfig = InternalAxiosRequestConfig & {
+  [key in typeof RETRY_FLAG]?: boolean;
 };
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE,
+  withCredentials: true,
 });
 
 let isRefreshing = false;
 let pendingQueue: PendingRequest[] = [];
-
-const RETRY_FLAG = '_retry';
-const REFRESH_ENDPOINT = '/api/auth/refresh';
 
 function waitForRefreshCompletion(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -41,17 +45,13 @@ function flushQueue(error?: unknown) {
 }
 
 function applyAuthorizationHeader(config: InternalAxiosRequestConfig, token: string) {
-  const headerValue = `Bearer ${token}`;
+  const value = `Bearer ${token}`;
+  const headers = config.headers instanceof AxiosHeaders
+    ? config.headers
+    : AxiosHeaders.from(config.headers ?? {});
 
-  if (typeof config.headers?.set === 'function') {
-    config.headers.set('Authorization', headerValue);
-    return;
-  }
-
-  config.headers = {
-    ...(config.headers ?? {}),
-    Authorization: headerValue,
-  };
+  headers.set('Authorization', value);
+  config.headers = headers;
 }
 
 async function refreshAccessToken(): Promise<void> {
@@ -59,17 +59,17 @@ async function refreshAccessToken(): Promise<void> {
     return waitForRefreshCompletion();
   }
 
-  isRefreshing = true;
   const refreshToken = getRefreshToken();
-  const expiresAt = getExpiresAt();
+  if (!refreshToken) {
+    clearTokens();
+    throw new Error('Missing refresh token');
+  }
+
+  isRefreshing = true;
 
   try {
     const response = await fetch(REFRESH_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken, expiresAt }),
       credentials: 'include',
     });
 
@@ -79,19 +79,14 @@ async function refreshAccessToken(): Promise<void> {
 
     const data = (await response.json()) as {
       accessToken?: string;
-      refreshToken?: string;
       expiresAt?: number;
     };
 
-    const nextAccessToken = data.accessToken;
-    const nextExpiresAt = data.expiresAt;
-    const nextRefreshToken = data.refreshToken ?? refreshToken;
-
-    if (!nextAccessToken || typeof nextExpiresAt !== 'number' || !nextRefreshToken) {
-      throw new Error('Invalid refresh token response');
+    if (!data.accessToken || typeof data.expiresAt !== 'number') {
+      throw new Error('Invalid refresh response');
     }
 
-    setTokens(nextAccessToken, nextRefreshToken, nextExpiresAt);
+    setTokens(data.accessToken, refreshToken, data.expiresAt);
     flushQueue();
   } catch (error) {
     flushQueue(error);
@@ -102,7 +97,7 @@ async function refreshAccessToken(): Promise<void> {
 }
 
 api.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
+  async (config) => {
     const accessToken = getAccessToken();
 
     if (!accessToken) {
@@ -115,9 +110,9 @@ api.interceptors.request.use(
       await refreshAccessToken();
     }
 
-    const latestToken = getAccessToken();
-    if (latestToken) {
-      applyAuthorizationHeader(config, latestToken);
+    const tokenToUse = getAccessToken();
+    if (tokenToUse) {
+      applyAuthorizationHeader(config, tokenToUse);
     }
 
     return config;
@@ -128,28 +123,28 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    if (error.response?.status !== 401) {
+    const { response, config } = error;
+
+    if (!response || response.status !== 401 || !config) {
       return Promise.reject(error);
     }
 
-    const originalConfig = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const typedConfig = config as RetriableConfig;
 
-    if (!originalConfig || originalConfig[RETRY_FLAG]) {
+    if (typedConfig[RETRY_FLAG]) {
       clearTokens();
       return Promise.reject(error);
     }
 
-    originalConfig[RETRY_FLAG] = true;
+    typedConfig[RETRY_FLAG] = true;
 
     try {
       await refreshAccessToken();
-
       const latestToken = getAccessToken();
       if (latestToken) {
-        applyAuthorizationHeader(originalConfig, latestToken);
+        applyAuthorizationHeader(typedConfig, latestToken);
       }
-
-      return api.request(originalConfig);
+      return api.request(typedConfig);
     } catch (refreshError) {
       clearTokens();
       return Promise.reject(refreshError);

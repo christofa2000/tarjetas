@@ -2,111 +2,139 @@
 
 /* --- Variables del tema suave --- */
 :root {
-  --carmine: #E9897E;
-  --burnt: #F5A489;
-  --golden: #FFE1A8;
-  --charcoal: #F7F3F0;
-  --graphite: #F0D4C7;
-  --lightgray: #E3D5CA;
-  --deepred: #F7C6B7;
+  --carmine: #e9897e;
+  --burnt: #f5a489;
+  --golden: #ffe1a8;
+  --charcoal: #f7f3f0;
+  --graphite: #f0d4c7;
+  --lightgray: #e3d5ca;
+  --deepred: #f7c6b7;
 }
 
-/* --- Reseteos minimos --- */
-html, body {
+html,
+body {
   height: 100%;
 }
 
-/* --- Capa base: aplica el fondo general cuando el body tenga .theme-fire --- */
 @layer base {
   body.theme-fire {
     /* Fondo claro con degradado melocoton -> rosa suave */
     background: linear-gradient(160deg, var(--charcoal) 0%, var(--deepred) 100%);
-    color: #2B2B2B;
+    color: #2b2b2b;
   }
 
-  /* Accesibilidad: foco visible y consistente */
   :focus-visible {
     outline: 2px solid var(--golden);
     outline-offset: 2px;
   }
 }
 
-/* --- Capa components: utilidades reusables con @apply + variables --- */
 @layer components {
-  /* Barra superior con gradiente de tonos pastel */
   .app-bar {
-    background-image: linear-gradient(90deg, #FFEADF, var(--burnt), var(--golden));
-    color: #3A2A25;
+    background-image: linear-gradient(90deg, #ffeacf, var(--burnt), var(--golden));
+    color: #3a2a25;
   }
 
-  /* Contenedor principal con max-width */
   .app-container {
-    @apply max-w-5xl mx-auto p-4;
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 1rem;
   }
 
-  /* Boton primario melocoton con hover albaricoque */
   .btn-primary {
     background: var(--carmine);
-    color: #2F1A17;
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium shadow;
+    color: #2f1a17;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
     transition: background-color 180ms ease, transform 120ms ease;
   }
-  .btn-primary:hover { background: var(--burnt); transform: translateY(-1px); }
-  .btn-primary:active { transform: translateY(0); }
 
-  /* Boton secundario outline dorado suave */
+  .btn-primary:hover {
+    background: var(--burnt);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
   .btn-outline {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium border;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    border-width: 1px;
+    border-style: solid;
     border-color: var(--golden);
-    color: #8A6240;
+    color: #8a6240;
     transition: color 180ms ease, border-color 180ms ease, transform 120ms ease;
   }
+
   .btn-outline:hover {
-    color: #3A2A25;
+    color: #3a2a25;
     background: var(--golden);
     border-color: var(--golden);
     transform: translateY(-1px);
   }
 
-  /* Tarjeta suave con gradiente claro y detalles sutiles */
   .card-fire {
     background: linear-gradient(145deg, var(--graphite), var(--deepred));
     border: 1px solid rgba(100, 75, 55, 0.12);
-    @apply rounded-2xl p-6 shadow;
-    color: #3A2A25;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    color: #3a2a25;
   }
 
-  /* Separador fino marfil */
   .divider {
     background: var(--lightgray);
-    @apply h-px w-full opacity-60;
+    height: 1px;
+    width: 100%;
+    opacity: 0.6;
   }
 
-  /* Texto premium dorado suave */
   .text-premium {
     color: var(--golden);
   }
 
-  /* Icono/hover en naranja melocoton */
-  .accent-hover:hover { color: var(--burnt); }
-
-  /* Chip/badge premium */
-  .badge-premium {
-    color: #3A2A25;
-    background: var(--golden);
-    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold;
+  .accent-hover:hover {
+    color: var(--burnt);
   }
 
-  /* Skeleton sutil (opcional) */
+  .badge-premium {
+    color: #3a2a25;
+    background: var(--golden);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+  }
+
   .skeleton {
     background: linear-gradient(90deg, rgba(247, 243, 240, 0.6), rgba(255, 233, 215, 0.9), rgba(247, 243, 240, 0.6));
     background-size: 200% 100%;
     animation: shimmer 1.2s infinite;
-    @apply rounded;
+    border-radius: 0.25rem;
   }
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }

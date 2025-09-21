@@ -6,12 +6,13 @@ import useAuthStore from '@/lib/authStore';
 
 const CreditCardItem = dynamic(() => import('@/components/cards/CreditCardItem'), {
   ssr: false,
-  loading: () => <p>Cargando...</p>,
+  loading: () => <p className="text-sm text-slate-200">Cargando...</p>,
 });
 
 export default function DashboardPage() {
   const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
 
   const handleLogout = async () => {
     await logout();
@@ -19,17 +20,22 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="mt-8 space-y-4">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="mt-8 space-y-6">
+      <section className="card-fire">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-semibold">Hola, {user?.name ?? 'usuario'}</h1>
+            <p className="mt-1 text-sm text-slate-200/80">
+              AquA- puedes consultar tus tarjetas y validar los datos sensibles con tu token temporal.
+            </p>
+          </div>
+          <button type="button" onClick={handleLogout} className="btn-outline text-sm">
+            Cerrar sesiA3n
+          </button>
+        </div>
+      </section>
 
       <CreditCardItem />
-
-      <button
-        onClick={handleLogout}
-        className="rounded bg-slate-900 px-4 py-2 text-white"
-      >
-        Cerrar sesion
-      </button>
     </div>
   );
 }

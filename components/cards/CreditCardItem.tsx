@@ -1,25 +1,16 @@
 'use client';
 
-import {
-  ChangeEvent,
-  FormEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
-import useAuthStore from '@/lib/authStore';
-
+const TOKEN_CODE = '123456';
 const COUNTDOWN_SECONDS = 20;
 
 interface CreditCardItemProps {
   cardName?: string;
-  cardNumber?: string;
-  cardholder?: string;
-  expiration?: string;
-  brand?: string;
+  cardNumber?: string | null;
+  cardholder?: string | null;
+  expiration?: string | null;
+  brand?: string | null;
 }
 
 const normalizeDigits = (value?: string | null) => (value ?? '').replace(/\D/g, '');
@@ -31,7 +22,7 @@ const formatCardNumber = (value?: string | null) => {
   if (!digits) {
     return '---- ---- ---- ----';
   }
-  return groupIntoChunks(digits);
+  return groupIntoChunks(digits.padEnd(16, '0').slice(0, 16));
 };
 
 const maskCardNumber = (value?: string | null) => {
@@ -39,23 +30,21 @@ const maskCardNumber = (value?: string | null) => {
   if (!digits) {
     return '**** **** **** ****';
   }
-  const maskedDigits = digits
+  const masked = digits
+    .padEnd(16, '*')
     .split('')
     .map((char, index) => (index < Math.max(0, digits.length - 4) ? '*' : char))
     .join('');
-  return groupIntoChunks(maskedDigits);
+  return groupIntoChunks(masked.slice(0, 16));
 };
 
 const CreditCardItem = ({
   cardName = 'Visa Gold',
   cardNumber = '4111111111111111',
-  cardholder = 'Juan PÃ©rez',
+  cardholder = 'Juan Pérez',
   expiration = '12/26',
   brand = 'Visa',
 }: CreditCardItemProps) => {
-  const userPassword = useAuthStore((state) => state.lastPassword);
-  const expectedToken = userPassword?.trim() ?? '';
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [token, setToken] = useState('');
   const [remainingTime, setRemainingTime] = useState(COUNTDOWN_SECONDS);
@@ -92,9 +81,35 @@ const CreditCardItem = ({
   }, [resetModalState]);
 
   const handleTokenChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.target;
-    setToken(value.slice(0, 64));
+    setToken(event.target.value.replace(/[^0-9]/g, '').slice(0, 6));
   }, []);
+
+  const handleOpenModal = useCallback(() => {
+    setShowSensitiveData(false);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleTokenSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      if (remainingTime <= 0) {
+        return;
+      }
+
+      if (token === TOKEN_CODE) {
+        setStatusMessage('Token correcto. Mostrando datos...');
+        setShowSensitiveData(true);
+        cleanupTimers();
+        autoCloseRef.current = window.setTimeout(() => {
+          handleCloseModal();
+        }, 1200);
+      } else {
+        setStatusMessage('Token inválido. Verifica e intenta de nuevo.');
+      }
+    },
+    [cleanupTimers, handleCloseModal, remainingTime, token]
+  );
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -102,7 +117,7 @@ const CreditCardItem = ({
     }
 
     setToken('');
-    setStatusMessage(expectedToken ? '' : 'No encontramos una contraseÃ±a activa. IniciÃ¡ sesiÃ³n para validar.');
+    setStatusMessage('');
     setRemainingTime(COUNTDOWN_SECONDS);
 
     const intervalId = window.setInterval(() => {
@@ -121,155 +136,114 @@ const CreditCardItem = ({
     return () => {
       cleanupTimers();
     };
-  }, [cleanupTimers, expectedToken, isModalOpen]);
+  }, [cleanupTimers, isModalOpen]);
 
   useEffect(() => {
     if (!isModalOpen || remainingTime > 0) {
       return;
     }
 
-    setStatusMessage('ContraseÃ±a invÃ¡lida (tiempo agotado).');
-    cleanupTimers();
-
+    setStatusMessage('Token inválido (tiempo agotado).');
     autoCloseRef.current = window.setTimeout(() => {
       handleCloseModal();
-    }, 1200);
+    }, 1000);
+  }, [handleCloseModal, isModalOpen, remainingTime]);
 
-    return () => {
-      if (autoCloseRef.current !== null) {
-        window.clearTimeout(autoCloseRef.current);
-        autoCloseRef.current = null;
-      }
-    };
-  }, [cleanupTimers, handleCloseModal, isModalOpen, remainingTime]);
-
-  useEffect(() => {
-    return () => {
-      cleanupTimers();
-    };
-  }, [cleanupTimers]);
-
-  const handleTokenSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-
-      if (remainingTime <= 0) {
-        return;
-      }
-
-      if (!expectedToken) {
-        setStatusMessage('No encontramos una contraseÃ±a activa. IniciÃ¡ sesiÃ³n para validar.');
-        return;
-      }
-
-      if (token === expectedToken) {
-        setStatusMessage('ContraseÃ±a correcta. Mostrando datosâ€¦');
-        setShowSensitiveData(true);
-        cleanupTimers();
-
-        autoCloseRef.current = window.setTimeout(() => {
-          handleCloseModal();
-        }, 1200);
-      } else {
-        setStatusMessage('ContraseÃ±a incorrecta.');
-      }
-    },
-    [cleanupTimers, expectedToken, handleCloseModal, remainingTime, token],
-  );
-
-  const isSuccessMessage = statusMessage.startsWith('ContraseÃ±a correcta');
-  const statusClassName = isSuccessMessage ? 'text-emerald-500' : 'text-rose-500';
+  const statusClassName = statusMessage.startsWith('Token correcto') ? 'text-emerald-500' : 'text-rose-500';
 
   return (
     <>
-      <div className="card-fire max-w-sm">
-        <div className='flex items-start justify-between'>
+      <div className="card-fire max-w-md space-y-6">
+        <header className="flex items-start justify-between gap-3">
           <div>
-            {brand ? (
-              <p className='text-xs font-semibold uppercase tracking-wider text-slate-400'>{brand}</p>
-            ) : (
-              <p className='text-xs font-semibold uppercase tracking-wider text-slate-400'>Tarjeta</p>
-            )}
-            <h2 className='mt-1 text-2xl font-semibold'>{cardName}</h2>
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-200/70">
+              {brand ?? 'Tarjeta'}
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold">{cardName ?? 'Tarjeta sin nombre'}</h2>
           </div>
-          <span className='rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-widest text-slate-200'>
+          <span className="badge-premium text-xs">
             {showSensitiveData ? 'Datos visibles' : 'Datos ocultos'}
           </span>
-        </div>
+        </header>
 
-        <div className='mt-8 space-y-4'>
+        <div className="space-y-4">
           <div>
-            <span className='text-xs uppercase tracking-widest text-slate-400'>NÃºmero</span>
-            <p className='mt-1 font-mono text-xl tracking-widest'>
+            <span className="text-xs uppercase tracking-widest text-slate-200/70">Número</span>
+            <p className="mt-1 font-mono text-xl tracking-widest">
               {showSensitiveData ? formattedCardNumber : maskedCardNumber}
             </p>
           </div>
-          <div className='flex items-center justify-between'>
+
+          <div className="flex items-center justify-between">
             <div>
-              <span className='text-xs uppercase tracking-widest text-slate-400'>Titular</span>
-              <p className='mt-1 text-lg font-medium'>{showSensitiveData ? cardholder : '**** ****'}</p>
+              <span className="text-xs uppercase tracking-widest text-slate-200/70">Titular</span>
+              <p className="mt-1 text-lg font-medium">
+                {showSensitiveData ? cardholder ?? 'Sin titular' : '**** ****'}
+              </p>
             </div>
-            <div className='text-right'>
-              <span className='text-xs uppercase tracking-widest text-slate-400'>Vence</span>
-              <p className='mt-1 font-mono text-lg'>{showSensitiveData ? expiration : '**/**'}</p>
+            <div className="text-right">
+              <span className="text-xs uppercase tracking-widest text-slate-200/70">Vencimiento</span>
+              <p className="mt-1 font-mono text-lg">
+                {showSensitiveData ? expiration ?? '--/--' : '**/**'}
+              </p>
             </div>
           </div>
         </div>
 
-        <button
-          type='button'
-          onClick={() => setIsModalOpen(true)}
-          className="btn-primary text-xs"
-        >
+        <button type="button" onClick={handleOpenModal} className="btn-primary text-sm">
           Mostrar datos
         </button>
       </div>
 
       {isModalOpen && (
         <div
-          className='fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm'
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
           onClick={handleCloseModal}
         >
           <div
-            role='dialog'
-            aria-modal='true'
-            className='w-full max-w-sm rounded-xl bg-white p-6 shadow-xl'
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className='text-lg font-semibold text-slate-900'>IngresÃ¡ tu contraseÃ±a</h3>
-            <p className='mt-2 text-sm text-slate-600'>Usamos la contraseÃ±a del usuario para validar antes de mostrar los datos sensibles.</p>
+            <h3 className="text-lg font-semibold text-slate-900">Introduce el token</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Tienes {remainingTime}s para validar tu identidad con el token 123456.
+            </p>
 
-            <form className='mt-6 space-y-4' onSubmit={handleTokenSubmit}>
-              <div className='text-sm font-medium text-slate-600'>
-                TenÃ©s {remainingTime}s
-              </div>
-
+            <form className="mt-6 space-y-4" onSubmit={handleTokenSubmit}>
               <input
                 autoFocus
-                type='password'
-                maxLength={64}
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
                 value={token}
                 onChange={handleTokenChange}
-                className='w-full rounded-lg border border-slate-200 px-3 py-2 text-lg tracking-widest outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200'
-                placeholder='******'
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-lg tracking-widest outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+                placeholder="123456"
+                disabled={remainingTime <= 0}
               />
 
               {statusMessage && (
                 <p className={`text-sm font-medium ${statusClassName}`}>{statusMessage}</p>
               )}
 
-              <div className='flex items-center justify-end gap-3 pt-2'>
+              <div className="flex items-center justify-between text-sm text-slate-600">
+                <span>Tiempo restante: {remainingTime}s</span>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
                 <button
-                  type='button'
+                  type="button"
                   onClick={handleCloseModal}
-                  className='rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2'
+                  className="btn-outline text-sm"
                 >
                   Cancelar
                 </button>
                 <button
-                  type='submit'
-                  disabled={!token || remainingTime <= 0 || !expectedToken}
-                  className='rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition enabled:hover:bg-emerald-400 enabled:focus-visible:outline-none enabled:focus-visible:ring-2 enabled:focus-visible:ring-emerald-200 enabled:focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-emerald-300'
+                  type="submit"
+                  disabled={!token || remainingTime <= 0}
+                  className="btn-primary text-sm disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   Validar
                 </button>
