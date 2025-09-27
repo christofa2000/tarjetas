@@ -1,5 +1,6 @@
-﻿import { render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: jest.fn() }),
   useSearchParams: () => ({ get: () => null }),
@@ -8,10 +9,10 @@ jest.mock('next/navigation', () => ({
 import Page from '../page';
 
 describe('LoginPage', () => {
-  it('muestra validaciones cuando el form est\u00E1 vac\u00EDo', async () => {
+  it('muestra validaciones cuando el formulario está vacío', async () => {
     render(<Page />);
     await userEvent.click(screen.getByRole('button', { name: /ingresar/i }));
-    expect(await screen.findByText(/Email inv\u00E1lido/i)).toBeInTheDocument();
-    expect(await screen.findByText(/M\u00EDnimo 4 caracteres/i)).toBeInTheDocument();
+    expect(await screen.findByText(/email inválido/i)).toBeInTheDocument();
+    expect(await screen.findByText(/mínimo 4 caracteres/i)).toBeInTheDocument();
   });
 });
