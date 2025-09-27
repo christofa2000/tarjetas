@@ -2,7 +2,7 @@
 
 /* --- Variables del tema personalizado --- */
 :root {
-  --primary-blue:   #38347B; /* Azul cálido */
+  --primary-blue:   #38347B; /* Azul cÃƒÂ¡lido */
   --accent-yellow:  #EFC542; /* Amarillo mandarina */
   --accent-red:     #EA3E2F; /* Rojo vibrante */
 
@@ -18,9 +18,8 @@ body {
 }
 
 @layer base {
-  body.theme-brand {
-    /* Fondo claro degradado azul -> amarillo */
-    background: linear-gradient(160deg, var(--primary-blue) 0%, var(--accent-yellow) 100%);
+  body.theme-fire {
+    background: linear-gradient(160deg, #EFC542 0%, #1F1B55 100%);
     color: #1e1e1e;
   }
 
@@ -56,10 +55,10 @@ body {
   }
 
   .btn-primary:hover {
-    background: var(--accent-red);
+    background: var(--accent-yellow);
+    color: #000;
     transform: translateY(-1px);
   }
-
   .btn-primary:active {
     transform: translateY(0);
   }

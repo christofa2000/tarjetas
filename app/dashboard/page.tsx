@@ -30,7 +30,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <button type="button" onClick={handleLogout} className="btn-outline text-sm">
-            Cerrar sesiA3n
+            Cerrar sesion
           </button>
         </div>
       </section>

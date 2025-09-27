@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
@@ -38,8 +38,8 @@ function LoginForm() {
   };
 
   return (
-    <div className="mt-10 flex justify-center">
-      <div className="card-fire w-full max-w-md space-y-6">
+    <div className="mt-10 flex justify-center px-4">
+      <div className="w-full max-w-md space-y-6 rounded-3xl border border-amber-200/70 bg-gradient-to-b from-white/95 via-amber-50/80 to-white/90 p-8 shadow-xl shadow-amber-200/40 backdrop-blur">
         <header className="space-y-1">
           <h1 className="text-3xl font-semibold">Ingresa a tu cuenta</h1>
           <p className="text-sm text-black/80">
@@ -47,9 +47,9 @@ function LoginForm() {
           </p>
         </header>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-slate-100">
+            <label htmlFor="email" className="text-sm font-semibold text-slate-700">
               Email
             </label>
             <input
@@ -66,7 +66,7 @@ function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium text-black/80">
+            <label htmlFor="password" className="text-sm font-semibold text-slate-700">
               Contraseña
             </label>
             <input
