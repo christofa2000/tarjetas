@@ -1,4 +1,4 @@
-﻿import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import {
   getAccessToken,
   getRefreshToken,
@@ -13,6 +13,9 @@ type PendingRequest = {
   reject: (reason?: any) => void;
 };
 
+const REFRESH_ENDPOINT = '/api/auth/refresh';
+const RETRY_FLAG = '_retry';
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE,
 });
@@ -20,24 +23,23 @@ const api = axios.create({
 let isRefreshing = false;
 let pendingQueue: PendingRequest[] = [];
 
-const RETRY_FLAG = '_retry';
-const REFRESH_ENDPOINT = '/api/auth/refresh';
+const processQueue = (error: Error | null, token: string | null = null) => {
+  pendingQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+      return;
+    }
 
-function waitForRefreshCompletion(): Promise<void> {
+    prom.resolve(token);
+  });
+
+  pendingQueue = [];
+};
+
+function waitForRefreshCompletion(): Promise<unknown> {
   return new Promise((resolve, reject) => {
     pendingQueue.push({ resolve, reject });
   });
-}
-
-function flushQueue(error?: unknown) {
-  pendingQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error);
-    } else {
-      resolve();
-    }
-  });
-  pendingQueue = [];
 }
 
 function applyAuthorizationHeader(config: InternalAxiosRequestConfig, token: string) {
@@ -54,22 +56,35 @@ function applyAuthorizationHeader(config: InternalAxiosRequestConfig, token: str
   };
 }
 
-async function refreshAccessToken(): Promise<void> {
+async function refreshAccessToken(): Promise<string> {
   if (isRefreshing) {
-    return waitForRefreshCompletion();
+    const result = await waitForRefreshCompletion();
+    if (typeof result === 'string') {
+      return result;
+    }
+
+    const latestToken = getAccessToken();
+    if (!latestToken) {
+      throw new Error('Missing access token after refresh completion');
+    }
+
+    return latestToken;
   }
 
   isRefreshing = true;
+
   const refreshToken = getRefreshToken();
-  const expiresAt = getExpiresAt();
+  if (!refreshToken) {
+    const error = new Error('Missing refresh token');
+    processQueue(error);
+    clearTokens();
+    isRefreshing = false;
+    throw error;
+  }
 
   try {
     const response = await fetch(REFRESH_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken, expiresAt }),
       credentials: 'include',
     });
 
@@ -84,17 +99,27 @@ async function refreshAccessToken(): Promise<void> {
     };
 
     const nextAccessToken = data.accessToken;
-    const nextExpiresAt = data.expiresAt;
     const nextRefreshToken = data.refreshToken ?? refreshToken;
+    const nextExpiresAt =
+      typeof data.expiresAt === 'number' ? data.expiresAt : getExpiresAt();
 
-    if (!nextAccessToken || typeof nextExpiresAt !== 'number' || !nextRefreshToken) {
+    if (
+      !nextAccessToken ||
+      typeof nextExpiresAt !== 'number' ||
+      Number.isNaN(nextExpiresAt) ||
+      !nextRefreshToken
+    ) {
       throw new Error('Invalid refresh token response');
     }
 
     setTokens(nextAccessToken, nextRefreshToken, nextExpiresAt);
-    flushQueue();
-  } catch (error) {
-    flushQueue(error);
+    processQueue(null, nextAccessToken);
+    return nextAccessToken;
+  } catch (unknownError) {
+    const error =
+      unknownError instanceof Error ? unknownError : new Error('Failed to refresh access token');
+    processQueue(error);
+    clearTokens();
     throw error;
   } finally {
     isRefreshing = false;
@@ -132,9 +157,16 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const originalConfig = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const originalConfig = error.config as
+      | (InternalAxiosRequestConfig & { [RETRY_FLAG]?: boolean })
+      | undefined;
 
     if (!originalConfig || originalConfig[RETRY_FLAG]) {
+      clearTokens();
+      return Promise.reject(error);
+    }
+
+    if (originalConfig.url?.includes(REFRESH_ENDPOINT)) {
       clearTokens();
       return Promise.reject(error);
     }
@@ -142,13 +174,8 @@ api.interceptors.response.use(
     originalConfig[RETRY_FLAG] = true;
 
     try {
-      await refreshAccessToken();
-
-      const latestToken = getAccessToken();
-      if (latestToken) {
-        applyAuthorizationHeader(originalConfig, latestToken);
-      }
-
+      const latestToken = await refreshAccessToken();
+      applyAuthorizationHeader(originalConfig, latestToken);
       return api.request(originalConfig);
     } catch (refreshError) {
       clearTokens();
