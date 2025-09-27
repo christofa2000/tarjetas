@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const refreshToken = `demo.rt.${crypto.randomUUID()}`;
 
   const response = NextResponse.json({
-    user: { id: 'u1', name: 'Demo User', email },
+    user: { id: 'u1', name: 'Juan Perez', email },
     accessToken,
     refreshToken,
     expiresAt,

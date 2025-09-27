@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
@@ -42,7 +42,7 @@ function LoginForm() {
       <div className="card-fire w-full max-w-md space-y-6">
         <header className="space-y-1">
           <h1 className="text-3xl font-semibold">Ingresa a tu cuenta</h1>
-          <p className="text-sm text-slate-200/80">
+          <p className="text-sm text-black/80">
             Demo: cualquier email y contraseña son válidos. Guarda el token 123456 para las tarjetas.
           </p>
         </header>
@@ -61,12 +61,12 @@ function LoginForm() {
               {...register('email')}
             />
             {errors.email && (
-              <p className="text-sm text-rose-200">{errors.email.message}</p>
+              <p className="text-sm text-black/80">{errors.email.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium text-slate-100">
+            <label htmlFor="password" className="text-sm font-medium text-black/80">
               Contraseña
             </label>
             <input
@@ -83,7 +83,7 @@ function LoginForm() {
           </div>
 
           {errors.root?.message && (
-            <p className="text-sm text-rose-200">{errors.root.message}</p>
+            <p className="text-sm text-black/80">{errors.root.message}</p>
           )}
 
           <button
@@ -101,7 +101,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="mt-10 text-center text-slate-200">Cargando formulario...</div>}>
+    <Suspense fallback={<div className="mt-10 text-center text-black/80">Cargando formulario...</div>}>
       <LoginForm />
     </Suspense>
   );

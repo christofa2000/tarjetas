@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -24,9 +24,9 @@ export default function DashboardPage() {
       <section className="card-fire">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-semibold">Hola, {user?.name ?? 'usuario'}</h1>
-            <p className="mt-1 text-sm text-slate-200/80">
-              AquA- puedes consultar tus tarjetas y validar los datos sensibles con tu token temporal.
+            <h1 className="text-3xl font-semibold">Hola {user?.name ?? 'usuario'},</h1>
+            <p className="mt-1 text-sm text-black/80">
+              Puedes consultar tus tarjetas y validar los datos sensibles con tu token temporal (123456).
             </p>
           </div>
           <button type="button" onClick={handleLogout} className="btn-outline text-sm">
