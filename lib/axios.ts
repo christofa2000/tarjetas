@@ -9,7 +9,7 @@ import {
 } from './token';
 
 type PendingRequest = {
-  resolve: (value?: unknown) => void;
+  resolve: (value: string | null) => void;
   reject: (reason?: unknown) => void;
 };
 
@@ -36,7 +36,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   pendingQueue = [];
 };
 
-function waitForRefreshCompletion(): Promise<unknown> {
+function waitForRefreshCompletion(): Promise<string | null> {
   return new Promise((resolve, reject) => {
     pendingQueue.push({ resolve, reject });
   });
