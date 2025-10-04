@@ -1,4 +1,4 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
 import {
   getAccessToken,
   getRefreshToken,
@@ -10,7 +10,7 @@ import {
 
 type PendingRequest = {
   resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
 };
 
 const REFRESH_ENDPOINT = '/api/auth/refresh';
@@ -45,15 +45,16 @@ function waitForRefreshCompletion(): Promise<unknown> {
 function applyAuthorizationHeader(config: InternalAxiosRequestConfig, token: string) {
   const headerValue = `Bearer ${token}`;
 
-  if (typeof config.headers?.set === 'function') {
-    config.headers.set('Authorization', headerValue);
-    return;
+  if (!config.headers) {
+    config.headers = new AxiosHeaders();
   }
 
-  config.headers = {
-    ...(config.headers ?? {}),
-    Authorization: headerValue,
-  };
+  if (config.headers instanceof AxiosHeaders) {
+    config.headers.set('Authorization', headerValue);
+  } else {
+    // Fallback for plain object
+    (config.headers as Record<string, string>)['Authorization'] = headerValue;
+  }
 }
 
 async function refreshAccessToken(): Promise<string> {
