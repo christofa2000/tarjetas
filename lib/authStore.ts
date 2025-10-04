@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -13,7 +13,6 @@ export interface User {
 
 export interface AuthState {
   user: User | null;
-  lastPassword: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -33,8 +32,7 @@ const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      lastPassword: null,
-      login: async (email, password) => {
+      async login(email, password) {
         const { data } = await api.post<LoginResponse>('/api/auth/login', { email, password });
         const { user, accessToken, refreshToken, expiresAt } = data;
 
@@ -43,14 +41,14 @@ const useAuthStore = create<AuthState>()(
         }
 
         setTokens(accessToken, refreshToken, expiresAt);
-        set({ user, lastPassword: password });
+        set({ user });
       },
-      logout: async () => {
+      async logout() {
         try {
           await api.post('/api/auth/logout');
         } finally {
           clearTokens();
-          set({ user: null, lastPassword: null });
+          set({ user: null });
         }
       },
     }),

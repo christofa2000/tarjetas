@@ -1,4 +1,4 @@
-// app/layout.tsx
+﻿// app/layout.tsx
 import './globals.css';
 import type { Metadata } from 'next';
 
@@ -10,8 +10,19 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body className="min-h-screen bg-slate-50 text-slate-900">
-        <div className="max-w-md mx-auto p-4">{children}</div>
+      {/* Agregamos theme-fire en el body */}
+      <body className="theme-fire min-h-screen">
+        {/* Barra superior (gradiente fuego) */}
+        <header className="app-bar">
+          <div className="app-container flex items-center justify-between py-3">
+            <div className="font-bold">Credit Cards Lab</div>
+            <span className="badge-premium">Premium</span>
+          </div>
+        </header>
+
+        <main className="app-container">
+          {children}
+        </main>
       </body>
     </html>
   );

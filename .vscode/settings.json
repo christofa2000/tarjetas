@@ -1,3 +1,13 @@
 {
-    "CodeGPT.apiKey": "OpenAI"
+    "CodeGPT.apiKey": "OpenAI",
+
+    // Acepta automáticamente las ediciones que sugiere Copilot tras 1s
+    "chat.editing.autoAcceptDelay": 1000,
+
+    // No preguntar confirmación al deshacer o reintentar una edición
+    "chat.editing.confirmEditRequestRemoval": false,
+    "chat.editing.confirmEditRequestRetry": false,
+
+    // No mostrar notificación del sistema pidiendo interacción
+    "chat.notifyWindowOnConfirmation": false
 }
