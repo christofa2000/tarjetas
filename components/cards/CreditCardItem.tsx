@@ -32,7 +32,7 @@ const ValidationModal = dynamic(() => import('./ValidationModal'));
 const CreditCardItem = ({
   cardName = 'Visa Gold',
   cardNumber = '4111111111111111',
-  cardholder = 'Juan Perez',
+  cardholder = 'Christian Papa',
   expiration = '12/26',
 }: CreditCardItemProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
