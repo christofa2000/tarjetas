@@ -17,7 +17,7 @@ type FormValues = z.infer<typeof schema>;
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || '/dashboard';
+  const next = params.get('next') ?? '/dashboard';
 
   const login = useAuthStore((state) => state.login);
 
@@ -37,17 +37,35 @@ function LoginForm() {
     }
   };
 
+  const emailError = errors.email?.message;
+  const passwordError = errors.password?.message;
+  const emailErrorId = emailError ? 'email-error' : undefined;
+  const passwordErrorId = passwordError ? 'password-error' : undefined;
+
   return (
-    <div className="mt-10 flex justify-center px-4">
-      <div className="w-full max-w-md space-y-6 rounded-3xl border border-amber-200/70 bg-gradient-to-b from-white/95 via-amber-50/80 to-white/90 p-8 shadow-xl shadow-amber-200/40 backdrop-blur">
-        <header className="space-y-1">
-          <h1 className="text-3xl font-semibold">Ingresa a tu cuenta</h1>
-          <p className="text-sm text-black/80">
-            Demo: cualquier email y contraseña son válidos. Guarda el token 123456 para las tarjetas.
+    <div className="flex min-h-[calc(100vh-7rem)] flex-col items-center justify-center px-4 py-12">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/60 bg-white/80 p-10 shadow-2xl shadow-orange-200/40 backdrop-blur-2xl">
+        <div
+          className="pointer-events-none absolute -left-14 -top-20 h-40 w-40 rounded-full bg-gradient-to-br from-amber-300/70 via-orange-400/50 to-rose-400/60 blur-3xl"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -bottom-20 right-[-3rem] h-48 w-48 rounded-full bg-gradient-to-br from-rose-300/60 via-orange-400/50 to-amber-300/60 blur-3xl"
+          aria-hidden="true"
+        />
+
+        <header className="relative space-y-3">
+          <span className="inline-flex items-center gap-2 rounded-full bg-orange-100/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-orange-500">
+            Bienvenido
+          </span>
+          <h1 className="text-3xl font-semibold text-slate-900">Ingresa a tu cuenta demo</h1>
+          <p className="text-sm leading-relaxed text-slate-600">
+            Usa cualquier email y contrasena para iniciar sesion. Guarda el token temporal <strong>123456</strong> para
+            revelar los datos sensibles de tus tarjetas.
           </p>
         </header>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="relative mt-8 space-y-6">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-semibold text-slate-700">
               Email
@@ -55,13 +73,17 @@ function LoginForm() {
             <input
               id="email"
               type="email"
-              className="w-full rounded-xl border border-white/30 bg-white/70 px-3 py-2 text-slate-900 placeholder:text-slate-500 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-slate-900 shadow-inner shadow-white/40 placeholder:text-slate-500 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
               placeholder="demo@correo.com"
               autoComplete="email"
+              aria-invalid={emailError ? 'true' : 'false'}
+              aria-describedby={emailErrorId}
               {...register('email')}
             />
-            {errors.email && (
-              <p className="text-sm text-black/80">{errors.email.message}</p>
+            {emailError && (
+              <p id="email-error" role="alert" className="text-sm text-rose-500">
+                {emailError}
+              </p>
             )}
           </div>
 
@@ -72,28 +94,38 @@ function LoginForm() {
             <input
               id="password"
               type="password"
-              className="w-full rounded-xl border border-white/30 bg-white/70 px-3 py-2 text-slate-900 placeholder:text-slate-500 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-slate-900 shadow-inner shadow-white/40 placeholder:text-slate-500 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
               placeholder="******"
               autoComplete="current-password"
+              aria-invalid={passwordError ? 'true' : 'false'}
+              aria-describedby={passwordErrorId}
               {...register('password')}
             />
-            {errors.password && (
-              <p className="text-sm text-rose-200">{errors.password.message}</p>
+            {passwordError && (
+              <p id="password-error" role="alert" className="text-sm text-rose-500">
+                {passwordError}
+              </p>
             )}
           </div>
 
           {errors.root?.message && (
-            <p className="text-sm text-black/80">{errors.root.message}</p>
+            <p role="alert" className="text-sm text-rose-500">
+              {errors.root.message}
+            </p>
           )}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-70"
+            className="btn-primary w-full focus-visible:ring-offset-[#FDF6EC] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? 'Ingresando...' : 'Ingresar'}
           </button>
         </form>
+
+        <p className="relative mt-6 text-center text-xs text-slate-500">
+          Seguridad simulada: los tokens expiran automaticamente y puedes reintentar las veces que necesites.
+        </p>
       </div>
     </div>
   );
@@ -101,7 +133,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="mt-10 text-center text-black/80">Cargando formulario...</div>}>
+    <Suspense fallback={<div className="mt-10 text-center text-slate-500">Cargando formulario...</div>}>
       <LoginForm />
     </Suspense>
   );

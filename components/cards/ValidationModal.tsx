@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const COUNTDOWN_SECONDS = 20;
 const VALIDATION_TOKEN = '123456';
@@ -13,7 +13,7 @@ interface ValidationModalProps {
 
 const validateTokenOnServer = async (token: string): Promise<{ success: boolean }> => {
   // Simula una llamada a backend. En modo demo solo aceptamos el token esperado.
-  console.log('Simulando validacion en el servidor para token: "' + token + '"');
+  console.log(`Simulando validacion en el servidor para token: "${token}"`);
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({ success: token === VALIDATION_TOKEN });
@@ -66,11 +66,15 @@ const ValidationModal = ({ isOpen, onClose, onSuccess }: ValidationModalProps) =
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleTimeout = useCallback(() => {
-    setStatus({ type: 'error', message: 'Tiempo agotado. Intentalo de nuevo.' });
+    setStatus({ type: 'error', message: 'Tiempo agotado. Intenta de nuevo.' });
     setIsSubmitting(false);
   }, []);
 
   const { remainingTime, reset } = useCountdown(isOpen, handleTimeout);
+  const progress = useMemo(
+    () => Math.max(0, Math.round((remainingTime / COUNTDOWN_SECONDS) * 100)),
+    [remainingTime],
+  );
 
   const handleClose = () => {
     onClose();
@@ -114,32 +118,67 @@ const ValidationModal = ({ isOpen, onClose, onSuccess }: ValidationModalProps) =
   };
 
   const statusClassName =
-    status.type === 'success' ? 'text-emerald-500' :
-    status.type === 'error' ? 'text-rose-500' :
-    'text-slate-600';
+    status.type === 'success'
+      ? 'text-emerald-500'
+      : status.type === 'error'
+        ? 'text-rose-500'
+        : 'text-slate-600';
+
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-[modal-fade_220ms_ease-out]"
       onClick={handleClose}
-      hidden={!isOpen}
+      role="presentation"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="dialog-title"
-        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+        className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/40 bg-white/90 p-6 shadow-2xl shadow-orange-200/40 backdrop-blur-2xl animate-[modal-pop_240ms_cubic-bezier(0.16,1,0.3,1)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <h3 id="dialog-title" className="text-lg font-semibold text-slate-900">
-          Ingresa tu token
-        </h3>
-        <p className="mt-2 text-sm text-slate-600">
-          Para proteger tu informacion necesitamos validar tu identidad.
-        </p>
+        <div
+          className="pointer-events-none absolute -top-20 right-[-3rem] h-44 w-44 rounded-full bg-gradient-to-br from-amber-200/60 via-orange-300/50 to-rose-300/60 blur-3xl"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -bottom-24 left-[-4rem] h-44 w-44 rounded-full bg-gradient-to-br from-rose-200/60 via-orange-300/50 to-amber-200/60 blur-3xl"
+          aria-hidden="true"
+        />
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <div className="text-sm font-medium text-slate-600">Tiempo restante: {remainingTime}s</div>
+        <div className="relative space-y-2">
+          <h3 id="dialog-title" className="text-lg font-semibold text-slate-900">
+            Ingresa tu token
+          </h3>
+          <p className="text-sm leading-relaxed text-slate-600">
+            Para proteger tu informacion necesitamos validar tu identidad con el token temporal de la sesion.
+          </p>
+        </div>
+
+        <form className="relative mt-6 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-orange-500">
+              <span>Tiempo</span>
+              <span>{remainingTime}s</span>
+            </div>
+            <div
+              className="h-2 overflow-hidden rounded-full bg-slate-200/70"
+              role="progressbar"
+              aria-valuenow={remainingTime}
+              aria-valuemin={0}
+              aria-valuemax={COUNTDOWN_SECONDS}
+            >
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 transition-all duration-200"
+                style={{ width: `${progress}%` }}
+                aria-hidden="true"
+              />
+            </div>
+          </div>
 
           <input
             autoFocus
@@ -147,7 +186,7 @@ const ValidationModal = ({ isOpen, onClose, onSuccess }: ValidationModalProps) =
             maxLength={64}
             value={token}
             onChange={(event: ChangeEvent<HTMLInputElement>) => setToken(event.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-lg tracking-widest outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
+            className="w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-lg tracking-[0.3em] text-slate-900 shadow-inner shadow-white/40 placeholder:text-slate-400 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
             placeholder="123456"
             disabled={isSubmitting}
           />
@@ -158,14 +197,14 @@ const ValidationModal = ({ isOpen, onClose, onSuccess }: ValidationModalProps) =
             <button
               type="button"
               onClick={handleClose}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2"
+              className="rounded-2xl border border-orange-200/70 bg-white/70 px-4 py-2 text-sm font-semibold text-orange-600 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDF6EC]"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={!token || remainingTime <= 0 || isSubmitting}
-              className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition enabled:hover:bg-emerald-400 enabled:focus-visible:outline-none enabled:focus-visible:ring-2 enabled:focus-visible:ring-emerald-200 enabled:focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-emerald-300"
+              className="btn-primary whitespace-nowrap px-5 py-2 focus-visible:ring-offset-[#FDF6EC] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? 'Validando...' : 'Validar'}
             </button>
