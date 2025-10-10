@@ -8,11 +8,20 @@ jest.mock('next/navigation', () => ({
 
 import Page from '../page';
 
+const normalize = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
 describe('LoginPage', () => {
   it('muestra validaciones cuando el formulario está vacío', async () => {
     render(<Page />);
+
     await userEvent.click(screen.getByRole('button', { name: /ingresar/i }));
-    expect(await screen.findByText(/email inválido/i)).toBeInTheDocument();
-    expect(await screen.findByText(/mínimo 4 caracteres/i)).toBeInTheDocument();
+
+    expect(
+      await screen.findByText((content) => normalize(content).includes('email invalido')),
+    ).toBeInTheDocument();
+
+    expect(
+      await screen.findByText((content) => normalize(content).includes('minimo 4 caracteres')),
+    ).toBeInTheDocument();
   });
 });
