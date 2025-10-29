@@ -1,12 +1,13 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
 import {
-  getAccessToken,
-  getRefreshToken,
-  getExpiresAt,
-  setTokens,
-  isAccessTokenNearExpiry,
   clearTokens,
-} from './token';
+  getAccessToken,
+  getExpiresAt,
+  getRefreshToken,
+  isAccessTokenNearExpiry,
+  setTokens,
+} from '@/lib/auth/token';
+import { APP_CONSTANTS } from '@/lib/constants/app';
+import axios, { type AxiosError, type InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
 
 type PendingRequest = {
   resolve: (value: string | null) => void;
@@ -24,7 +25,7 @@ let isRefreshing = false;
 let pendingQueue: PendingRequest[] = [];
 
 const processQueue = (error: Error | null, token: string | null = null) => {
-  pendingQueue.forEach((prom) => {
+  pendingQueue.forEach(prom => {
     if (error) {
       prom.reject(error);
       return;
@@ -101,8 +102,7 @@ async function refreshAccessToken(): Promise<string> {
 
     const nextAccessToken = data.accessToken;
     const nextRefreshToken = data.refreshToken ?? refreshToken;
-    const nextExpiresAt =
-      typeof data.expiresAt === 'number' ? data.expiresAt : getExpiresAt();
+    const nextExpiresAt = typeof data.expiresAt === 'number' ? data.expiresAt : getExpiresAt();
 
     if (
       !nextAccessToken ||
@@ -137,7 +137,7 @@ api.interceptors.request.use(
 
     if (isRefreshing) {
       await waitForRefreshCompletion();
-    } else if (isAccessTokenNearExpiry(30)) {
+    } else if (isAccessTokenNearExpiry(APP_CONSTANTS.AUTH.TOKEN_EXPIRY_THRESHOLD_SEC)) {
       await refreshAccessToken();
     }
 
@@ -148,11 +148,11 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  error => Promise.reject(error)
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  response => response,
   async (error: AxiosError) => {
     if (error.response?.status !== 401) {
       return Promise.reject(error);

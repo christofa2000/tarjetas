@@ -1,8 +1,8 @@
 ﻿'use client';
 
+import { useAuth } from '@/lib/hooks/useAuth';
+import { handleApiError } from '@/lib/utils/errorHandler';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
-import useAuthStore from '@/lib/authStore';
 
 const CreditCardItem = dynamic(() => import('@/components/cards/CreditCardItem'), {
   ssr: false,
@@ -10,13 +10,18 @@ const CreditCardItem = dynamic(() => import('@/components/cards/CreditCardItem')
 });
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const logout = useAuthStore((state) => state.logout);
-  const user = useAuthStore((state) => state.user);
+  const { user, logout } = useAuth();
 
   const handleLogout = async () => {
-    await logout();
-    router.replace('/login');
+    try {
+      await logout();
+    } catch (error) {
+      // En producción, podrías mostrar un toast o notificación
+      const errorMessage = handleApiError(error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Logout error:', errorMessage);
+      }
+    }
   };
 
   return (
@@ -31,8 +36,9 @@ export default function DashboardPage() {
               Hola {user?.name ?? 'usuario'},
             </h1>
             <p className="text-sm leading-relaxed text-slate-600">
-              Revisa tus tarjetas y valida los datos sensibles utilizando el token temporal <strong>123456</strong>.
-              Los accesos expiran automaticamente para mantener la demo segura.
+              Revisa tus tarjetas y valida los datos sensibles utilizando el token temporal{' '}
+              <strong>123456</strong>. Los accesos expiran automaticamente para mantener la demo
+              segura.
             </p>
           </div>
           <button
@@ -70,15 +76,15 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Recomendaciones rapidas</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Utiliza el boton <em>Mostrar datos</em> para iniciar el flujo protegido. Si el token expira, puedes
-              solicitar uno nuevo sin perder la sesion.
+              Utiliza el boton <em>Mostrar datos</em> para iniciar el flujo protegido. Si el token
+              expira, puedes solicitar uno nuevo sin perder la sesion.
             </p>
           </div>
           <div className="rounded-2xl bg-orange-50/70 p-4 text-sm text-orange-700 shadow-inner shadow-orange-100">
             <p className="font-semibold">Tip de seguridad</p>
             <p className="mt-1 leading-relaxed">
-              El token simula un OTP de un solo uso. En una integracion real deberias invalidarlo al primer uso o al
-              expirar el countdown.
+              El token simula un OTP de un solo uso. En una integracion real deberias invalidarlo al
+              primer uso o al expirar el countdown.
             </p>
           </div>
           <ul className="space-y-2 text-sm text-slate-600">

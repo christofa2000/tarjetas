@@ -1,12 +1,11 @@
+import { APP_CONSTANTS } from '@/lib/constants/app';
 import { NextRequest, NextResponse } from 'next/server';
-
-const PROTECTED_PREFIXES = ['/dashboard', '/cards', '/transactions'];
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get('access_token')?.value ?? '';
   const pathname = req.nextUrl.pathname;
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const isProtected = APP_CONSTANTS.ROUTES.PROTECTED.some(prefix => pathname.startsWith(prefix));
 
   if (isProtected && !token) {
     const nextValue = pathname + req.nextUrl.search;

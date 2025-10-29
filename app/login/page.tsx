@@ -1,11 +1,12 @@
 'use client';
 
+import useAuthStore from '@/lib/auth/store';
+import { handleApiError } from '@/lib/utils/errorHandler';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter, useSearchParams } from 'next/navigation';
-import useAuthStore from '@/lib/authStore';
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
@@ -19,7 +20,7 @@ function LoginForm() {
   const params = useSearchParams();
   const next = params.get('next') ?? '/dashboard';
 
-  const login = useAuthStore((state) => state.login);
+  const login = useAuthStore(state => state.login);
 
   const {
     register,
@@ -32,8 +33,9 @@ function LoginForm() {
     try {
       await login(data.email, data.password);
       router.replace(next);
-    } catch {
-      setError('root', { message: 'No se pudo iniciar sesión. Intenta de nuevo.' });
+    } catch (error) {
+      const errorMessage = handleApiError(error);
+      setError('root', { message: errorMessage });
     }
   };
 
@@ -60,8 +62,8 @@ function LoginForm() {
           </span>
           <h1 className="text-3xl font-semibold text-slate-900">Ingresa a tu cuenta demo</h1>
           <p className="text-sm leading-relaxed text-slate-600">
-            Usa cualquier email y contrasena para iniciar sesion. Guarda el token temporal <strong>123456</strong> para
-            revelar los datos sensibles de tus tarjetas.
+            Usa cualquier email y contrasena para iniciar sesion. Guarda el token temporal{' '}
+            <strong>123456</strong> para revelar los datos sensibles de tus tarjetas.
           </p>
         </header>
 
@@ -124,7 +126,8 @@ function LoginForm() {
         </form>
 
         <p className="relative mt-6 text-center text-xs text-slate-500">
-          Seguridad simulada: los tokens expiran automaticamente y puedes reintentar las veces que necesites.
+          Seguridad simulada: los tokens expiran automaticamente y puedes reintentar las veces que
+          necesites.
         </p>
       </div>
     </div>
@@ -133,7 +136,9 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="mt-10 text-center text-slate-500">Cargando formulario...</div>}>
+    <Suspense
+      fallback={<div className="mt-10 text-center text-slate-500">Cargando formulario...</div>}
+    >
       <LoginForm />
     </Suspense>
   );

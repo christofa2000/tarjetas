@@ -1,4 +1,4 @@
-﻿let _accessToken: string | null = null;
+let _accessToken: string | null = null;
 let _refreshToken: string | null = null;
 let _expiresAt: number | null = null;
 

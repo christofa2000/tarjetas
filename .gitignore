@@ -13,6 +13,10 @@
 # testing
 /coverage
 
+# Markdown files (except README.md)
+*.md
+!README.md
+
 # next.js
 /.next/
 /out/
